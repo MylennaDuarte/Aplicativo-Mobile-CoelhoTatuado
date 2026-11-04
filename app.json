@@ -1,0 +1,44 @@
+{
+  "expo": {
+    "name": "Coelho Tatuado",
+    "slug": "coelho-tatuado",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "coelhotatuado",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0A0A0A",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "br.com.coelhotatuado.app"
+    },
+    "android": {
+      "package": "br.com.coelhotatuado.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A0A0A",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0A0A0A",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 120
+        }
+      ],
+      "expo-image",
+      "expo-status-bar"
+    ],
+    "experiments": {
+      "reactCompiler": true
+    }
+  }
+}
