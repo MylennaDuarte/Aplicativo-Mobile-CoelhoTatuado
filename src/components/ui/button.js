@@ -4,7 +4,8 @@ import { Fonts, Radius, tracking } from '../../constants/theme';
 import { useTheme } from '../../hooks/use-theme';
 
 // Botão do app.
-// variant: "primary" (bloco claro), "secondary" (contorno) ou "pill" (cápsula pequena sobre imagem).
+// variant: "primary" (bloco claro), "secondary" (contorno sobre imagem),
+// "outline" (contorno discreto em fundo escuro) ou "pill" (cápsula pequena sobre imagem).
 // trailing: elemento à direita do texto (ex.: seta).
 export function Button({
   title,
@@ -21,6 +22,7 @@ export function Button({
   const container = {
     primary: { backgroundColor: colors.primary },
     secondary: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.lineOnImage },
+    outline: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.borderStrong },
     pill: { backgroundColor: colors.overlay, borderWidth: 1, borderColor: colors.lineOnImage },
   }[variant];
 
@@ -85,6 +87,11 @@ const styles = StyleSheet.create({
   },
   texto_secondary: {
     fontFamily: Fonts.sansSemiBold,
+    fontSize: 13,
+    letterSpacing: tracking(0.1, 13),
+  },
+  texto_outline: {
+    fontFamily: Fonts.sans,
     fontSize: 13,
     letterSpacing: tracking(0.1, 13),
   },

@@ -35,6 +35,7 @@ const styles = StyleSheet.create({
   // Manrope
   body: { fontFamily: Fonts.sans, fontSize: 14, lineHeight: 22 },
   bodyStrong: { fontFamily: Fonts.sansSemiBold, fontSize: 14, lineHeight: 20 },
+  itemTitle: { fontFamily: Fonts.sansBold, fontSize: 15, lineHeight: 20 },
   small: { fontFamily: Fonts.sans, fontSize: 13, lineHeight: 19 },
   smallBold: { fontFamily: Fonts.sansBold, fontSize: 13, lineHeight: 18 },
   caption: { fontFamily: Fonts.sans, fontSize: 12, lineHeight: 17 },
