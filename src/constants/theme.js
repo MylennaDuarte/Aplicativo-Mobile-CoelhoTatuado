@@ -9,6 +9,8 @@ export const Colors = {
     surfaceElevated: '#141414',
     border: '#2A2A2A',
     borderStrong: '#3A3A3A',
+    // Divisórias internas de cards e listas (mais discretas que border).
+    divider: '#1C1C1C',
     text: '#F2F0EB',
     textSecondary: '#C9C7C1',
     textMuted: '#9A9A9A',
@@ -30,6 +32,7 @@ export const Colors = {
     surfaceElevated: '#EAE8E3',
     border: '#D9D7D2',
     borderStrong: '#C4C2BD',
+    divider: '#E4E2DD',
     text: '#0A0A0A',
     textSecondary: '#3A3A3A',
     textMuted: '#6B6B6B',

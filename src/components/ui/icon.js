@@ -39,6 +39,9 @@ const GLYPHS = {
       <Path d="M5 20a7 7 0 0 1 14 0" />
     </>
   ),
+  check: <Path d="M5 12.5l4.5 4.5L19 7.5" />,
+  chevronLeft: <Path d="M14.5 6l-6 6 6 6" />,
+  chevronRight: <Path d="M9.5 6l6 6-6 6" />,
 };
 
 export function Icon({ name, size = 22, color, strokeWidth = 1.6 }) {
