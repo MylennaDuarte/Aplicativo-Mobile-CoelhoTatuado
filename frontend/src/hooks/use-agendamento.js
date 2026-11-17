@@ -1,6 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { Alert } from 'react-native';
 
 import { AGENDAR_MOCK } from '../data/agendar.mock';
+import { api } from '../services/api/client';
 import {
   chaveMes,
   doisDigitos,
@@ -20,8 +22,6 @@ function mesDe(data) {
   return { ano: data.getFullYear(), mes: data.getMonth() };
 }
 
-// Estado e regras do fluxo de agendamento: etapas, calendário, horários e dados do cliente.
-// Serviços e disponibilidade vêm do mock; quando houver backend, troque por api.get/api.post aqui.
 export function useAgendamento() {
   const [hoje] = useState(() => new Date());
   const [passo, setPasso] = useState(1);
@@ -31,11 +31,25 @@ export function useAgendamento() {
   const [horario, setHorario] = useState(null);
   const [dados, setDados] = useState(DADOS_INICIAIS);
 
+  const [carregando, setCarregando] = useState(false);
+  const [codigoOficial, setCodigoOficial] = useState(null);
+  const [agendamentosSalvos, setAgendamentosSalvos] = useState([]);
+
   const { servicos, horarios, diasFechados, diasIndisponiveis, horariosOcupados } = AGENDAR_MOCK;
   const servico = servicos.find((item) => item.id === servicoId) ?? null;
 
-  // Grade do mês visível em semanas completas: células vazias antes do dia 1 e depois do último.
-  // Dias passados, dias fechados e dias já reservados ficam indisponíveis.
+  useEffect(() => {
+    async function carregarAgendamentos() {
+      try {
+        const lista = await api.get('/agendamentos');
+        setAgendamentosSalvos(lista);
+      } catch (err) {
+        console.log('Aviso: não foi possível buscar horários ocupados do servidor:', err.message);
+      }
+    }
+    carregarAgendamentos();
+  }, []);
+
   const dias = useMemo(() => {
     const { ano, mes } = mesVisivel;
     const reservados = diasIndisponiveis[chaveMes(ano, mes)] ?? [];
@@ -64,13 +78,22 @@ export function useAgendamento() {
   }, [mesVisivel, dia, hoje, diasFechados, diasIndisponiveis]);
 
   const horariosDoDia = useMemo(() => {
-    const ocupados = dia ? (horariosOcupados[dia] ?? []) : [];
+    if (!dia) return [];
+
+    const dataIsoSelecionada = `${mesVisivel.ano}-${doisDigitos(mesVisivel.mes + 1)}-${doisDigitos(dia)}`;
+    const ocupadosMock = horariosOcupados[dia] ?? [];
+    const ocupadosBanco = agendamentosSalvos
+      .filter((item) => item.data === dataIsoSelecionada)
+      .map((item) => item.horario);
+
+    const todosOcupados = new Set([...ocupadosMock, ...ocupadosBanco]);
+
     return horarios.map((item) => ({
       horario: item,
-      ocupado: ocupados.includes(item),
+      ocupado: todosOcupados.has(item),
       selecionado: item === horario,
     }));
-  }, [dia, horario, horarios, horariosOcupados]);
+  }, [dia, mesVisivel, horario, horarios, horariosOcupados, agendamentosSalvos]);
 
   const dataFormatada = dia ? formatarDataCurta(mesVisivel.ano, mesVisivel.mes, dia) : '';
   const dadosValidos = dados.nome.trim() !== '' && dados.whatsapp.trim() !== '';
@@ -85,8 +108,7 @@ export function useAgendamento() {
     ...(dados.observacoes ? [{ rotulo: 'Observações', valor: dados.observacoes }] : []),
   ];
 
-  // Código provisório da solicitação (dia + mês); o definitivo virá do backend.
-  const codigo = `CT-${doisDigitos(dia ?? 0)}${doisDigitos(mesVisivel.mes + 1)}`;
+  const codigo = codigoOficial ?? `CT-${doisDigitos(dia ?? 0)}${doisDigitos(mesVisivel.mes + 1)}`;
 
   function selecionarDia(numero) {
     setDia(numero);
@@ -111,9 +133,40 @@ export function useAgendamento() {
     setPasso((atual) => Math.max(1, atual - 1));
   }
 
-  function confirmar() {
-    // Quando houver backend: api.post('/agendamentos', { servicoId, data, horario, ...dados }).
-    setPasso(TOTAL_PASSOS + 1);
+  async function confirmar() {
+    if (carregando) return;
+
+    const dataIso = `${mesVisivel.ano}-${doisDigitos(mesVisivel.mes + 1)}-${doisDigitos(dia)}`;
+
+    const payload = {
+      servicoId: servico?.id ?? '',
+      servicoTitulo: servico?.titulo ?? servico?.nome ?? '',
+      data: dataIso,
+      horario,
+      nome: dados.nome.trim(),
+      whatsapp: dados.whatsapp.trim(),
+      instagram: dados.instagram.trim(),
+      observacoes: dados.observacoes.trim(),
+    };
+
+    try {
+      setCarregando(true);
+      const resposta = await api.post('/agendamentos', payload);
+
+      if (resposta?.codigo) {
+        setCodigoOficial(resposta.codigo);
+      }
+
+      setAgendamentosSalvos((prev) => [...prev, { ...payload, id: resposta?.id, codigo: resposta?.codigo }]);
+      setPasso(TOTAL_PASSOS + 1);
+    } catch (err) {
+      Alert.alert(
+        'Erro ao agendar',
+        err.message || 'Não foi possível conectar com o servidor. Verifique se o back-end está rodando.'
+      );
+    } finally {
+      setCarregando(false);
+    }
   }
 
   function reiniciar() {
@@ -123,6 +176,7 @@ export function useAgendamento() {
     setDia(null);
     setHorario(null);
     setDados(DADOS_INICIAIS);
+    setCodigoOficial(null);
   }
 
   return {
@@ -135,12 +189,10 @@ export function useAgendamento() {
     voltar,
     confirmar,
     reiniciar,
-    // etapa 1
     servicos,
     servicoId,
     servico,
     selecionarServico: setServicoId,
-    // etapa 2
     ano: mesVisivel.ano,
     mes: mesVisivel.mes,
     dias,
@@ -152,14 +204,12 @@ export function useAgendamento() {
     horario,
     selecionarHorario: setHorario,
     dataFormatada,
-    // etapa 3
     dados,
     atualizarDados,
-    // revisão e confirmação
     resumo,
     codigo,
     avisoConfirmacao: AGENDAR_MOCK.avisoConfirmacao,
     enviado: AGENDAR_MOCK.enviado,
-    carregando: false,
+    carregando,
   };
 }
