@@ -1,4 +1,4 @@
-import { Alert, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 import { Diferenciais } from '../components/inicio/diferenciais';
 import { Hero } from '../components/inicio/hero';
@@ -9,20 +9,14 @@ import { Screen } from '../components/layout/screen';
 import { AppText } from '../components/ui/text';
 import { Spacing, tracking } from '../constants/theme';
 import { useInicio } from '../hooks/use-inicio';
+import { navegarPara } from '../navigation/navegar';
 
 export function InicioScreen({ navigation }) {
   const { dados } = useInicio();
 
-  function irParaAgendar() {
-    navigation.navigate('Agendar');
-  }
-
-  function irParaGaleria() {
-    navigation.navigate('Galeria');
-  }
-
-  function abrirEmBreve(titulo) {
-    Alert.alert(titulo, 'Esta tela está em desenvolvimento e estará disponível em breve.');
+  // Navegação centralizada (src/navigation/navegar.js): tabs e telas do stack.
+  function irPara(rota, params) {
+    navegarPara(navigation, rota, params);
   }
 
   return (
@@ -30,18 +24,18 @@ export function InicioScreen({ navigation }) {
       <Screen padded={false} safeTop={false} withBottomNav>
         <Hero
           conteudo={dados.hero}
-          onAgendar={irParaAgendar}
-          onOrcamento={() => abrirEmBreve('Orçamento')}
-          onEstudio={() => abrirEmBreve('O estúdio')}
+          onAgendar={() => irPara('Agendar')}
+          onOrcamento={() => irPara('Orcamento')}
+          onEstudio={() => irPara('Estudio')}
         />
         <TrabalhosRecentes
           trabalhos={dados.trabalhosRecentes}
-          onVerTodos={irParaGaleria}
-          onSelecionarTrabalho={irParaGaleria}
+          onVerGaleria={() => irPara('Galeria')}
+          onAbrir={(trabalho) => irPara('Trabalho', { id: trabalho.id })}
         />
-        <NovidadeDestaque novidade={dados.novidade} />
+        <NovidadeDestaque novidade={dados.novidade} onVerNovidades={() => irPara('Novidades')} />
         <Diferenciais itens={dados.diferenciais} />
-        <TatuadorCard tatuador={dados.tatuador} />
+        <TatuadorCard tatuador={dados.tatuador} onPress={() => irPara('Tatuador')} />
         <AppText variant="label" color="textFaint" style={styles.rodape}>
           {dados.rodape}
         </AppText>

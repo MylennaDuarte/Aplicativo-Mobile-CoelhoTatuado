@@ -5,14 +5,15 @@ import { ScreenHeader } from '../components/layout/screen-header';
 import { NovidadeCard } from '../components/novidades/novidade-card';
 import { Spacing } from '../constants/theme';
 import { useNovidades } from '../hooks/use-novidades';
+import { navegarPara } from '../navigation/navegar';
 
 // Tela de novidades: cards com agenda, promoções e projetos do estúdio.
 export function NovidadesScreen({ navigation }) {
   const { novidades } = useNovidades();
 
-  // Navega só se a tela já estiver registrada no navigator (mesma regra da BottomNav).
-  function irPara(rota) {
-    if (navigation.getState().routeNames.includes(rota)) navigation.navigate(rota);
+  // Navegação centralizada (src/navigation/navegar.js); `params` pré-preenche o orçamento.
+  function irPara(rota, params) {
+    navegarPara(navigation, rota, params);
   }
 
   return (
@@ -24,7 +25,7 @@ export function NovidadesScreen({ navigation }) {
             <NovidadeCard
               key={novidade.id}
               novidade={novidade}
-              onAcao={(item) => irPara(item.acao.rota)}
+              onAcao={(item) => irPara(item.acao.rota, item.acao.params)}
             />
           ))}
         </View>
