@@ -1,7 +1,35 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
+const crypto = require('crypto');
+
+const ALGORITMO = 'aes-256-cbc';
+const CHAVE = Buffer.from(process.env.CHAVE_SECRETA || 'coelho_tatuado_chave_secreta_32b');
+
+function criptografar(texto) {
+  if (!texto) return texto;
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipheriv(ALGORITMO, CHAVE, iv);
+  let criptografado = cipher.update(String(texto), 'utf8', 'hex');
+  criptografado += cipher.final('hex');
+  return `${iv.toString('hex')}:${criptografado}`;
+}
+
+function descriptografar(textoCriptografado) {
+  if (!textoCriptografado || !String(textoCriptografado).includes(':')) return textoCriptografado;
+  try {
+    const [ivHex, dadosHex] = String(textoCriptografado).split(':');
+    const iv = Buffer.from(ivHex, 'hex');
+    const decipher = crypto.createDecipheriv(ALGORITMO, CHAVE, iv);
+    let descriptografado = decipher.update(dadosHex, 'hex', 'utf8');
+    descriptografado += decipher.final('utf8');
+    return descriptografado;
+  } catch (erro) {
+    return textoCriptografado;
+  }
+}
 
 const app = express();
 app.use(express.json());
@@ -72,14 +100,30 @@ async function iniciar() {
   });
 
   app.get('/agendamentos', async (req, res) => {
-    res.json(await db.all('SELECT * FROM agendamentos ORDER BY id DESC'));
+    const lista = await db.all('SELECT * FROM agendamentos ORDER BY id DESC');
+    const listaPronta = lista.map((item) => ({
+      ...item,
+      nome: descriptografar(item.nome),
+      whatsapp: descriptografar(item.whatsapp),
+      instagram: descriptografar(item.instagram),
+    }));
+    res.json(listaPronta);
   });
 
   app.post('/agendamentos', async (req, res) => {
     const { servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes } = req.body;
     const r = await db.run(
       'INSERT INTO agendamentos (servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes]
+      [
+        servicoId,
+        servicoTitulo,
+        data,
+        horario,
+        criptografar(nome),
+        criptografar(whatsapp),
+        criptografar(instagram),
+        observacoes,
+      ]
     );
     const codigo = 'CT-' + String(r.lastID).padStart(4, '0');
     await db.run('UPDATE agendamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
@@ -87,14 +131,27 @@ async function iniciar() {
   });
 
   app.get('/orcamentos', async (req, res) => {
-    res.json(await db.all('SELECT * FROM orcamentos ORDER BY id DESC'));
+    const lista = await db.all('SELECT * FROM orcamentos ORDER BY id DESC');
+    const listaPronta = lista.map((item) => ({
+      ...item,
+      nome: descriptografar(item.nome),
+      whatsapp: descriptografar(item.whatsapp),
+    }));
+    res.json(listaPronta);
   });
 
   app.post('/orcamentos', async (req, res) => {
     const { estilo, localCorpo, tamanhoCm, ideia, nome, whatsapp } = req.body;
     const r = await db.run(
       'INSERT INTO orcamentos (estilo, localCorpo, tamanhoCm, ideia, nome, whatsapp) VALUES (?, ?, ?, ?, ?, ?)',
-      [estilo, localCorpo, tamanhoCm, ideia, nome, whatsapp]
+      [
+        estilo,
+        localCorpo,
+        tamanhoCm,
+        ideia,
+        criptografar(nome),
+        criptografar(whatsapp),
+      ]
     );
     const codigo = 'ORC-' + String(r.lastID).padStart(4, '0');
     await db.run('UPDATE orcamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
