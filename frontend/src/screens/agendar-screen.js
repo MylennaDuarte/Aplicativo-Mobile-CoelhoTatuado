@@ -8,14 +8,15 @@ import { Revisao } from '../components/agendar/revisao';
 import { TipoAtendimento } from '../components/agendar/tipo-atendimento';
 import { Screen } from '../components/layout/screen';
 import { useAgendamento } from '../hooks/use-agendamento';
+import { navegarPara } from '../navigation/navegar';
 
 // Tela de agendamento: quatro etapas (tipo → data e horário → dados → revisão) e a confirmação.
 export function AgendarScreen({ navigation }) {
   const agendamento = useAgendamento();
 
-  // Navega só se a tela já estiver registrada no navigator (mesma regra da BottomNav).
+  // Navegação centralizada (src/navigation/navegar.js): tabs e telas do stack.
   function irPara(rota) {
-    if (navigation.getState().routeNames.includes(rota)) navigation.navigate(rota);
+    navegarPara(navigation, rota);
   }
 
   function voltarAoInicio() {

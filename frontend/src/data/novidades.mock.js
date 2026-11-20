@@ -1,5 +1,5 @@
 // Novidades do estúdio, copiadas do protótipo. Sem imagens: as fotos virão do backend.
-// `acao.rota` é o nome da tela aberta pelo botão; ela só abre se já estiver registrada.
+// `acao.rota` é o nome da tela aberta pelo botão; `acao.params` (opcional) vai junto na navegação.
 export const NOVIDADES_MOCK = {
   itens: [
     {
@@ -32,7 +32,11 @@ export const NOVIDADES_MOCK = {
       descricao:
         'Dez desenhos autorais do mascote, tamanho até 8 cm, valor fechado. Um por pessoa, ordem de chegada.',
       alturaImagem: 150,
-      acao: { rotulo: 'Quero um flash', rota: 'Orcamento' },
+      acao: {
+        rotulo: 'Quero um flash',
+        rota: 'Orcamento',
+        params: { estilo: 'Blackwork', ideia: 'Flash day Coelhos' },
+      },
     },
     {
       id: 'n4',

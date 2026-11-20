@@ -7,14 +7,15 @@ import { AbaOrcamentos } from '../components/meu-espaco/aba-orcamentos';
 import { AbaSessoes } from '../components/meu-espaco/aba-sessoes';
 import { Abas } from '../components/meu-espaco/abas';
 import { useMeuEspaco } from '../hooks/use-meu-espaco';
+import { navegarPara } from '../navigation/navegar';
 
 // Tela Meu Espaço: sessões marcadas, orçamentos e histórico do cliente, em abas.
 export function MeuEspacoScreen({ navigation }) {
   const meuEspaco = useMeuEspaco();
 
-  // Navega só se a tela já estiver registrada no navigator (mesma regra da BottomNav).
+  // Navegação centralizada (src/navigation/navegar.js): tabs e telas do stack.
   function irPara(rota) {
-    if (navigation.getState().routeNames.includes(rota)) navigation.navigate(rota);
+    navegarPara(navigation, rota);
   }
 
   function renderAba() {
