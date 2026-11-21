@@ -1,4 +1,4 @@
-// Tokens de design do app, extraídos do protótipo (Claude Design).
+// Tokens de design do app, extraídos do protótipo (Claude Design e Figma.
 // A marca é estritamente preto e branco: o app roda sempre no tema escuro.
 // A paleta clara existe só como reserva e espelha as mesmas chaves.
 

@@ -1,12 +1,20 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
 import { useTheme } from '../hooks/use-theme';
+import { EstudioScreen } from '../screens/estudio-screen';
+import { OrcamentoScreen } from '../screens/orcamento-screen';
+import { TatuadorScreen } from '../screens/tatuador-screen';
+import { TrabalhoScreen } from '../screens/trabalho-screen';
 import { TabNavigator } from './tab-navigator';
 
 const Stack = createNativeStackNavigator();
 
-// Pilha principal. As tabs ficam na base; telas de detalhe ou modais
-// entram aqui como <Stack.Screen> e abrem por cima das tabs.
+// Telas que começam com foto: o header fica transparente e só a seta de voltar aparece sobre ela.
+const HEADER_SOBRE_FOTO = {
+  title: '',
+  headerTransparent: true,
+  headerStyle: { backgroundColor: 'transparent' },
+};
 export function RootNavigator() {
   const { colors } = useTheme();
 
@@ -20,6 +28,10 @@ export function RootNavigator() {
         contentStyle: { backgroundColor: colors.background },
       }}>
       <Stack.Screen name="Tabs" component={TabNavigator} options={{ headerShown: false }} />
+      <Stack.Screen name="Trabalho" component={TrabalhoScreen} options={HEADER_SOBRE_FOTO} />
+      <Stack.Screen name="Estudio" component={EstudioScreen} options={HEADER_SOBRE_FOTO} />
+      <Stack.Screen name="Tatuador" component={TatuadorScreen} options={HEADER_SOBRE_FOTO} />
+      <Stack.Screen name="Orcamento" component={OrcamentoScreen} options={{ title: '' }} />
     </Stack.Navigator>
   );
 }
