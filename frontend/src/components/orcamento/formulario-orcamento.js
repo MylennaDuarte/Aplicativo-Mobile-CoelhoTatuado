@@ -1,5 +1,4 @@
 import { StyleSheet, View } from 'react-native';
-
 import { Fonts, tracking } from '../../constants/theme';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -7,8 +6,7 @@ import { AppText } from '../ui/text';
 import { GrupoChips } from './grupo-chips';
 import { Referencias } from './referencias';
 
-// Formulário do orçamento: estilo, região, medidas, ideia, referências, data, contato e envio.
-// Recebe o objeto do hook useOrcamento inteiro para não repassar campo a campo.
+
 export function FormularioOrcamento({ orcamento }) {
   const {
     estilos,
@@ -16,7 +14,8 @@ export function FormularioOrcamento({ orcamento }) {
     dados,
     atualizar,
     referencias,
-    alternarReferencia,
+    escolherReferencia,
+    removerReferencia,
     valido,
     enviando,
     enviar,
@@ -70,7 +69,11 @@ export function FormularioOrcamento({ orcamento }) {
         numberOfLines={4}
       />
 
-      <Referencias marcadas={referencias} onAlternar={alternarReferencia} />
+      <Referencias
+        referencias={referencias}
+        onEscolher={escolherReferencia}
+        onRemover={removerReferencia}
+      />
 
       <Input
         label="Preferência de data"
@@ -117,7 +120,6 @@ const styles = StyleSheet.create({
   medida: {
     flex: 1,
   },
-  // Medidas em Bebas Neue, como no protótipo.
   numero: {
     fontFamily: Fonts.display,
     fontSize: 18,

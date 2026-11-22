@@ -1,3 +1,4 @@
+import * as ImagePicker from 'expo-image-picker';
 import { useState } from 'react';
 import { Alert } from 'react-native';
 
@@ -15,7 +16,7 @@ const DADOS_INICIAIS = {
   observacoes: '',
 };
 
-// Preenche o formulário com o que veio por parâmetro de rota
+
 function dadosIniciais(prefill) {
   const dados = { ...DADOS_INICIAIS };
   if (!prefill) return dados;
@@ -27,15 +28,16 @@ function dadosIniciais(prefill) {
   return dados;
 }
 
+
 function referenciasVazias() {
-  return Array(ORCAMENTO_MOCK.totalReferencias).fill(false);
+  return Array(ORCAMENTO_MOCK.totalReferencias).fill(null);
 }
 
 export function useOrcamento(prefill) {
   const [dados, setDados] = useState(() => dadosIniciais(prefill));
   const [referencias, setReferencias] = useState(referenciasVazias);
   const [enviando, setEnviando] = useState(false);
-  // Depois do envio: { codigo } devolvido pelo servidor.
+
   const [enviado, setEnviado] = useState(null);
 
   const valido = Boolean(
@@ -47,15 +49,31 @@ export function useOrcamento(prefill) {
     setDados((atual) => ({ ...atual, [campo]: valor }));
   }
 
-  // Marca/desmarca um espaço de referência. O envio das fotos virá com o backend de uploads.
-  function alternarReferencia(indice) {
-    setReferencias((atual) => atual.map((marcada, i) => (i === indice ? !marcada : marcada)));
+  
+  async function escolherReferencia(indice) {
+    const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissao.granted) {
+      Alert.alert('Sem acesso às fotos', 'Libere o acesso à galeria nas configurações.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+    if (resultado.canceled) return;
+
+    const { uri } = resultado.assets[0];
+    setReferencias((atual) => atual.map((foto, i) => (i === indice ? { uri } : foto)));
+  }
+
+  function removerReferencia(indice) {
+    setReferencias((atual) => atual.map((foto, i) => (i === indice ? null : foto)));
   }
 
   async function enviar() {
     if (!valido || enviando) return;
 
-    // Campos com os nomes das colunas do backend.
     const payload = {
       estilo: dados.estilo,
       localCorpo: dados.regiao,
@@ -94,7 +112,8 @@ export function useOrcamento(prefill) {
     dados,
     atualizar,
     referencias,
-    alternarReferencia,
+    escolherReferencia,
+    removerReferencia,
     valido,
     enviando,
     enviado,
