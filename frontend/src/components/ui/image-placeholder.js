@@ -1,16 +1,26 @@
+import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../../hooks/use-theme';
+import { urlDaImagem } from '../../utils/imagem';
 import { AppText } from './text';
 
-// Ocupa o lugar de uma imagem que virá do backend.
-// Quando a API existir, troque por <Image source={{ uri }} /> no mesmo lugar.
-export function ImagePlaceholder({ label = 'Imagem', style }) {
+// Mostra a foto quando `uri` existe (caminho relativo do back ou URL completa);
+// sem foto, fica o quadrado cinza com o rótulo.
+export function ImagePlaceholder({ uri, label = 'Imagem', style }) {
   const { colors } = useTheme();
+  const url = urlDaImagem(uri);
 
   return (
     <View style={[styles.base, { backgroundColor: colors.surfaceElevated }, style]}>
-      {label ? (
+      {url ? (
+        <Image
+          source={{ uri: url }}
+          contentFit="cover"
+          transition={200}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : label ? (
         <AppText variant="label" color="textFaint">
           {label}
         </AppText>

@@ -1,9 +1,10 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { ORCAMENTO_MOCK } from '../data/orcamento.mock';
 import { api } from '../services/api/client';
+import { lerIdentidade, salvarIdentidade } from '../services/identidade';
 
 const DADOS_INICIAIS = {
   estilo: null,
@@ -12,6 +13,7 @@ const DADOS_INICIAIS = {
   altura: '',
   ideia: '',
   preferenciaData: '',
+  nome: '',
   whatsapp: '',
   observacoes: '',
 };
@@ -40,8 +42,20 @@ export function useOrcamento(prefill) {
 
   const [enviado, setEnviado] = useState(null);
 
+  // Nome e WhatsApp salvos no celular (último agendamento/orçamento) já vêm preenchidos.
+  useEffect(() => {
+    lerIdentidade().then((salva) => {
+      if (!salva) return;
+      setDados((atual) => ({
+        ...atual,
+        nome: atual.nome || salva.nome || '',
+        whatsapp: atual.whatsapp || salva.whatsapp || '',
+      }));
+    });
+  }, []);
+
   const valido = Boolean(
-    dados.estilo && dados.regiao && dados.ideia.trim() && dados.whatsapp.trim()
+    dados.estilo && dados.regiao && dados.ideia.trim() && dados.nome.trim() && dados.whatsapp.trim()
   );
   const tamanho = dados.largura && dados.altura ? `${dados.largura}×${dados.altura} cm` : '';
 
@@ -79,6 +93,7 @@ export function useOrcamento(prefill) {
       localCorpo: dados.regiao,
       tamanhoCm: tamanho,
       ideia: dados.ideia.trim(),
+      nome: dados.nome.trim(),
       whatsapp: dados.whatsapp.trim(),
       preferenciaData: dados.preferenciaData.trim(),
       observacoes: dados.observacoes.trim(),
@@ -87,6 +102,7 @@ export function useOrcamento(prefill) {
     try {
       setEnviando(true);
       const resposta = await api.post('/orcamentos', payload);
+      salvarIdentidade({ nome: payload.nome, whatsapp: payload.whatsapp });
       setEnviado({ codigo: resposta?.codigo ?? '' });
     } catch (err) {
       Alert.alert(
@@ -99,7 +115,7 @@ export function useOrcamento(prefill) {
   }
 
   function reiniciar() {
-    setDados(DADOS_INICIAIS);
+    setDados({ ...DADOS_INICIAIS, nome: dados.nome, whatsapp: dados.whatsapp });
     setReferencias(referenciasVazias());
     setEnviado(null);
   }

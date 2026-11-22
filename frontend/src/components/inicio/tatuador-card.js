@@ -18,7 +18,7 @@ export function TatuadorCard({ tatuador, onPress }) {
         styles.card,
         { backgroundColor: colors.surface, borderColor: pressed ? colors.textFaint : colors.border },
       ]}>
-      <ImagePlaceholder label="" style={styles.foto} />
+      <ImagePlaceholder uri={tatuador.imagemUrl} label="" style={styles.foto} />
       <View style={styles.textos}>
         <AppText variant="label">{tatuador.papel}</AppText>
         <AppText variant="cardTitle">{tatuador.nome}</AppText>

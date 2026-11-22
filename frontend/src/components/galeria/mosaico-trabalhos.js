@@ -43,7 +43,11 @@ export function MosaicoTrabalhos({ trabalhos, onAbrir }) {
                 { height: trabalho.altura, backgroundColor: colors.surfaceElevated },
                 pressed && styles.pressed,
               ]}>
-              <ImagePlaceholder label={trabalho.titulo} style={StyleSheet.absoluteFill} />
+              <ImagePlaceholder
+                uri={trabalho.imagemUrl}
+                label={trabalho.titulo}
+                style={StyleSheet.absoluteFill}
+              />
               <LinearGradient colors={['transparent', 'rgba(10,10,10,0.9)']} style={styles.legenda}>
                 <AppText variant="label" color="textSecondary">
                   {trabalho.estilo}

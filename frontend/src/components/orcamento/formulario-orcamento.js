@@ -82,6 +82,14 @@ export function FormularioOrcamento({ orcamento }) {
         onChangeText={(valor) => atualizar('preferenciaData', valor)}
       />
       <Input
+        label="Seu nome"
+        placeholder="Como devemos te chamar"
+        value={dados.nome}
+        onChangeText={(valor) => atualizar('nome', valor)}
+        autoCapitalize="words"
+        textContentType="name"
+      />
+      <Input
         label="Seu WhatsApp"
         placeholder="(00) 00000-0000"
         value={dados.whatsapp}

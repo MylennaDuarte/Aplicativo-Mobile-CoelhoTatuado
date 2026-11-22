@@ -15,7 +15,7 @@ export function NovidadeCard({ novidade, onAcao }) {
   return (
     <Card semPadding>
       <View style={{ height: novidade.alturaImagem }}>
-        <ImagePlaceholder style={StyleSheet.absoluteFill} />
+        <ImagePlaceholder uri={novidade.imagemUrl} style={StyleSheet.absoluteFill} />
         <Tag
           label={novidade.tag}
           tone={novidade.destaque ? 'solid' : 'overlay'}

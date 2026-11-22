@@ -11,16 +11,22 @@ export function AbaOrcamentos({ orcamentos, etapas, onReservar, onNovoOrcamento 
 
   return (
     <View>
-      <View style={styles.lista}>
-        {orcamentos.map((orcamento) => (
-          <OrcamentoCard
-            key={orcamento.codigo}
-            orcamento={orcamento}
-            etapas={etapas}
-            onReservar={onReservar}
-          />
-        ))}
-      </View>
+      {orcamentos.length === 0 ? (
+        <AppText color="textMuted" style={styles.vazio}>
+          Nenhum orçamento enviado.
+        </AppText>
+      ) : (
+        <View style={styles.lista}>
+          {orcamentos.map((orcamento) => (
+            <OrcamentoCard
+              key={orcamento.codigo}
+              orcamento={orcamento}
+              etapas={etapas}
+              onReservar={onReservar}
+            />
+          ))}
+        </View>
+      )}
       <Pressable
         accessibilityRole="button"
         onPress={onNovoOrcamento}
@@ -37,6 +43,10 @@ export function AbaOrcamentos({ orcamentos, etapas, onReservar, onNovoOrcamento 
 }
 
 const styles = StyleSheet.create({
+  vazio: {
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
   lista: {
     gap: 12,
   },

@@ -39,7 +39,7 @@ export function TrabalhoScreen({ navigation, route }) {
     <View style={styles.flex}>
       <Screen padded={false} safeTop={false}>
         <View>
-          <Capa altura={ALTURA_CAPA} degrade={false} />
+          <Capa altura={ALTURA_CAPA} imagem={trabalho.imagemUrl} degrade={false} />
           <AppText variant="label" color="textSecondary" style={styles.arroba}>
             @{AppConfig.instagram}
           </AppText>
