@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Linking } from 'react-native';
 
+import { AppConfig } from '../constants/config';
 import { AGENDAR_MOCK } from '../data/agendar.mock';
 import { api } from '../services/api/client';
 import {
@@ -12,6 +13,7 @@ import {
   proximoMes,
   totalDiasDoMes,
 } from '../utils/calendar';
+import { linkWhatsApp, mensagemAgendamento } from '../utils/whatsapp';
 
 const TOTAL_PASSOS = 4;
 const TITULOS_PASSOS = ['Tipo de atendimento', 'Data e horário', 'Seus dados', 'Revisão'];
@@ -179,6 +181,29 @@ export function useAgendamento() {
     setCodigoOficial(null);
   }
 
+  
+  async function enviarPorWhatsApp() {
+    const mensagem = mensagemAgendamento({
+      codigo,
+      servico: servico?.nome ?? 'Atendimento',
+      data: dataFormatada,
+      horario,
+      nome: dados.nome.trim(),
+      observacoes: dados.observacoes,
+    });
+    const url = linkWhatsApp(AppConfig.whatsapp, mensagem);
+
+    if (!url) {
+      Alert.alert('WhatsApp não configurado', 'Preencha EXPO_PUBLIC_WHATSAPP no .env do front-end.');
+      return;
+    }
+    try {
+      await Linking.openURL(url);
+    } catch {
+      Alert.alert('Não foi possível abrir o WhatsApp', 'Confira se o aplicativo está instalado.');
+    }
+  }
+
   return {
     passo,
     totalPassos: TOTAL_PASSOS,
@@ -210,6 +235,7 @@ export function useAgendamento() {
     codigo,
     avisoConfirmacao: AGENDAR_MOCK.avisoConfirmacao,
     enviado: AGENDAR_MOCK.enviado,
+    enviarPorWhatsApp,
     carregando,
   };
 }

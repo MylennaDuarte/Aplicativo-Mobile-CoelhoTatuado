@@ -4,12 +4,13 @@ import { AppConfig } from '../constants/config';
 import { GALERIA_MOCK } from '../data/galeria.mock';
 import { TATUADOR_MOCK } from '../data/tatuador.mock';
 import { api } from '../services/api/client';
+import { linkWhatsApp } from '../utils/whatsapp';
 
 const TOTAL_DESTAQUES = 3;
 function linkDaRede(id) {
   if (id === 'instagram') return `https://instagram.com/${AppConfig.instagram}`;
   if (id === 'tiktok') return `https://www.tiktok.com/@${AppConfig.tiktok}`;
-  if (id === 'whatsapp') return AppConfig.whatsapp ? `https://wa.me/${AppConfig.whatsapp}` : '';
+  if (id === 'whatsapp') return linkWhatsApp(AppConfig.whatsapp);
   return '';
 }
 

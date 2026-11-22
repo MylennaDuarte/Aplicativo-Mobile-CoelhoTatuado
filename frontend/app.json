@@ -35,6 +35,12 @@
         }
       ],
       "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O app acessa suas fotos para anexar referências ao orçamento."
+        }
+      ],
       "expo-status-bar"
     ],
     "experiments": {

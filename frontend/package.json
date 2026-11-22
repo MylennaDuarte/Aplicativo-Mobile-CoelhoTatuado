@@ -9,7 +9,11 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "doctor": "expo-doctor"
+    "doctor": "expo-doctor",
+    "test": "jest"
+  },
+  "jest": {
+    "preset": "jest-expo"
   },
   "dependencies": {
     "@expo-google-fonts/bebas-neue": "^0.4.1",
@@ -21,6 +25,7 @@
     "expo-constants": "~58.0.12",
     "expo-font": "~58.0.8",
     "expo-image": "~58.0.18",
+    "expo-image-picker": "~58.0.10",
     "expo-linear-gradient": "~58.0.4",
     "expo-splash-screen": "~58.0.14",
     "expo-status-bar": "~58.0.5",
@@ -35,7 +40,9 @@
   },
   "devDependencies": {
     "eslint": "^9.0.0",
-    "eslint-config-expo": "~58.0.4"
+    "eslint-config-expo": "~58.0.4",
+    "jest": "~30.5.2",
+    "jest-expo": "~58.0.15"
   },
   "allowScripts": {
     "unrs-resolver@1.12.2": true

@@ -1,5 +1,4 @@
 import { Pressable, StyleSheet, View } from 'react-native';
-
 import { Radius, Spacing, tracking } from '../../constants/theme';
 import { useTheme } from '../../hooks/use-theme';
 import { Button } from '../ui/button';
@@ -8,8 +7,7 @@ import { Icon } from '../ui/icon';
 import { AppText } from '../ui/text';
 import { ResumoLinhas } from './resumo-linhas';
 
-// Tela final do agendamento: selo de confirmação, código da solicitação e resumo.
-export function Confirmacao({ conteudo, codigo, linhas, onAcompanhar, onVoltarInicio }) {
+export function Confirmacao({ conteudo, codigo, linhas, onWhatsApp, onAcompanhar, onVoltarInicio }) {
   const { colors } = useTheme();
 
   return (
@@ -42,7 +40,13 @@ export function Confirmacao({ conteudo, codigo, linhas, onAcompanhar, onVoltarIn
         <ResumoLinhas linhas={linhas} />
       </Card>
 
-      <Button title="Acompanhar em Meu Espaço" onPress={onAcompanhar} style={styles.botao} />
+      <Button title="Enviar pelo WhatsApp" onPress={onWhatsApp} style={styles.botao} />
+      <Button
+        title="Acompanhar em Meu Espaço"
+        variant="outline"
+        onPress={onAcompanhar}
+        style={styles.botaoSecundario}
+      />
       <Pressable
         accessibilityRole="button"
         onPress={onVoltarInicio}
@@ -119,6 +123,9 @@ const styles = StyleSheet.create({
   },
   botao: {
     marginTop: Spacing.lg,
+  },
+  botaoSecundario: {
+    marginTop: 10,
   },
   voltar: {
     marginTop: 10,
