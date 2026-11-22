@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Linking } from 'react-native';
 
 import { AppConfig } from '../constants/config';
 import { AGENDAR_MOCK } from '../data/agendar.mock';
 import { api } from '../services/api/client';
+import { lerIdentidade, salvarIdentidade } from '../services/identidade';
 import {
   chaveMes,
   doisDigitos,
@@ -24,6 +26,15 @@ function mesDe(data) {
   return { ano: data.getFullYear(), mes: data.getMonth() };
 }
 
+function dataIsoDe(ano, mes, dia) {
+  return `${ano}-${doisDigitos(mes + 1)}-${doisDigitos(dia)}`;
+}
+
+function dadosComIdentidade(identidade) {
+  if (!identidade) return DADOS_INICIAIS;
+  return { ...DADOS_INICIAIS, nome: identidade.nome ?? '', whatsapp: identidade.whatsapp ?? '' };
+}
+
 export function useAgendamento() {
   const [hoje] = useState(() => new Date());
   const [passo, setPasso] = useState(1);
@@ -32,25 +43,53 @@ export function useAgendamento() {
   const [dia, setDia] = useState(null);
   const [horario, setHorario] = useState(null);
   const [dados, setDados] = useState(DADOS_INICIAIS);
+  const [identidade, setIdentidade] = useState(null);
 
   const [carregando, setCarregando] = useState(false);
   const [codigoOficial, setCodigoOficial] = useState(null);
-  const [agendamentosSalvos, setAgendamentosSalvos] = useState([]);
+  const [ocupados, setOcupados] = useState([]);
 
   const { servicos, horarios, diasFechados, diasIndisponiveis, horariosOcupados } = AGENDAR_MOCK;
   const servico = servicos.find((item) => item.id === servicoId) ?? null;
 
   useEffect(() => {
-    async function carregarAgendamentos() {
-      try {
-        const lista = await api.get('/agendamentos');
-        setAgendamentosSalvos(lista);
-      } catch (err) {
-        console.log('Aviso: não foi possível buscar horários ocupados do servidor:', err.message);
-      }
-    }
-    carregarAgendamentos();
+    lerIdentidade().then((salva) => {
+      if (!salva) return;
+      setIdentidade(salva);
+      setDados((atual) => (atual.nome || atual.whatsapp ? atual : dadosComIdentidade(salva)));
+    });
   }, []);
+
+  const carregarOcupados = useCallback(async () => {
+    try {
+      const lista = await api.get('/agendamentos');
+      if (Array.isArray(lista)) {
+        setOcupados(lista.map((item) => ({ data: item.data, horario: item.horario })));
+      }
+    } catch (err) {
+      console.log('Aviso: não foi possível buscar horários ocupados do servidor:', err.message);
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      carregarOcupados();
+    }, [carregarOcupados])
+  );
+
+  const ocupadosPorDia = useMemo(() => {
+    const { ano, mes } = mesVisivel;
+    const resultado = {};
+    const adicionar = (numero, lista) => {
+      resultado[numero] = new Set([...(resultado[numero] ?? []), ...lista]);
+    };
+    Object.entries(horariosOcupados).forEach(([numero, lista]) => adicionar(Number(numero), lista));
+    ocupados.forEach((item) => {
+      const [anoItem, mesItem, diaItem] = String(item.data).split('-').map(Number);
+      if (anoItem === ano && mesItem === mes + 1) adicionar(diaItem, [item.horario]);
+    });
+    return resultado;
+  }, [mesVisivel, ocupados, horariosOcupados]);
 
   const dias = useMemo(() => {
     const { ano, mes } = mesVisivel;
@@ -64,7 +103,8 @@ export function useAgendamento() {
       const data = new Date(ano, mes, numero);
       const passado = data <= hoje;
       const fechado = diasFechados.includes(data.getDay());
-      const reservado = reservados.includes(numero);
+      const lotado = (ocupadosPorDia[numero]?.size ?? 0) >= horarios.length;
+      const reservado = reservados.includes(numero) || lotado;
       grade.push({
         chave: String(numero),
         numero,
@@ -77,25 +117,18 @@ export function useAgendamento() {
       grade.push({ chave: `fim-${grade.length}`, vazio: true });
     }
     return grade;
-  }, [mesVisivel, dia, hoje, diasFechados, diasIndisponiveis]);
+  }, [mesVisivel, dia, hoje, diasFechados, diasIndisponiveis, ocupadosPorDia, horarios]);
 
   const horariosDoDia = useMemo(() => {
     if (!dia) return [];
-
-    const dataIsoSelecionada = `${mesVisivel.ano}-${doisDigitos(mesVisivel.mes + 1)}-${doisDigitos(dia)}`;
-    const ocupadosMock = horariosOcupados[dia] ?? [];
-    const ocupadosBanco = agendamentosSalvos
-      .filter((item) => item.data === dataIsoSelecionada)
-      .map((item) => item.horario);
-
-    const todosOcupados = new Set([...ocupadosMock, ...ocupadosBanco]);
+    const ocupadosDoDia = ocupadosPorDia[dia] ?? new Set();
 
     return horarios.map((item) => ({
       horario: item,
-      ocupado: todosOcupados.has(item),
+      ocupado: ocupadosDoDia.has(item),
       selecionado: item === horario,
     }));
-  }, [dia, mesVisivel, horario, horarios, horariosOcupados, agendamentosSalvos]);
+  }, [dia, horario, horarios, ocupadosPorDia]);
 
   const dataFormatada = dia ? formatarDataCurta(mesVisivel.ano, mesVisivel.mes, dia) : '';
   const dadosValidos = dados.nome.trim() !== '' && dados.whatsapp.trim() !== '';
@@ -138,8 +171,7 @@ export function useAgendamento() {
   async function confirmar() {
     if (carregando) return;
 
-    const dataIso = `${mesVisivel.ano}-${doisDigitos(mesVisivel.mes + 1)}-${doisDigitos(dia)}`;
-
+    const dataIso = dataIsoDe(mesVisivel.ano, mesVisivel.mes, dia);
     const payload = {
       servicoId: servico?.id ?? '',
       servicoTitulo: servico?.titulo ?? servico?.nome ?? '',
@@ -159,7 +191,10 @@ export function useAgendamento() {
         setCodigoOficial(resposta.codigo);
       }
 
-      setAgendamentosSalvos((prev) => [...prev, { ...payload, id: resposta?.id, codigo: resposta?.codigo }]);
+      setOcupados((prev) => [...prev, { data: dataIso, horario }]);
+      const salva = { nome: payload.nome, whatsapp: payload.whatsapp };
+      setIdentidade(salva);
+      salvarIdentidade(salva);
       setPasso(TOTAL_PASSOS + 1);
     } catch (err) {
       Alert.alert(
@@ -177,11 +212,10 @@ export function useAgendamento() {
     setMesVisivel(mesDe(hoje));
     setDia(null);
     setHorario(null);
-    setDados(DADOS_INICIAIS);
+    setDados(dadosComIdentidade(identidade));
     setCodigoOficial(null);
   }
 
-  
   async function enviarPorWhatsApp() {
     const mensagem = mensagemAgendamento({
       codigo,
