@@ -13,7 +13,7 @@ export function NovidadeDestaque({ novidade, onVerNovidades }) {
 
   return (
     <Card semPadding style={styles.card}>
-      <ImagePlaceholder style={styles.imagem} />
+      <ImagePlaceholder uri={novidade.imagemUrl} style={styles.imagem} />
       <View style={[styles.tag, { backgroundColor: colors.primary }]}>
         <AppText variant="labelStrong" color="onPrimary">
           {novidade.tag}

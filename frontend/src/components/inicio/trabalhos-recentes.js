@@ -35,7 +35,7 @@ export function TrabalhosRecentes({ trabalhos, onVerGaleria, onAbrir }) {
               { backgroundColor: colors.surfaceElevated },
               pressed && styles.pressed,
             ]}>
-            <ImagePlaceholder style={StyleSheet.absoluteFill} />
+            <ImagePlaceholder uri={item.imagemUrl} style={StyleSheet.absoluteFill} />
             <LinearGradient
               colors={['transparent', 'rgba(10,10,10,0.85)']}
               locations={[0.5, 1]}

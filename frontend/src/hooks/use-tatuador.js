@@ -16,6 +16,7 @@ function linkDaRede(id) {
 
 export function useTatuador() {
   const [destaques, setDestaques] = useState(GALERIA_MOCK.trabalhos.slice(0, TOTAL_DESTAQUES));
+  const [imagemUrl, setImagemUrl] = useState(null);
 
   useEffect(() => {
     async function carregarDestaques() {
@@ -29,7 +30,17 @@ export function useTatuador() {
       }
     }
 
+    async function carregarFoto() {
+      try {
+        const inicio = await api.get('/inicio');
+        setImagemUrl(inicio?.tatuador?.imagemUrl ?? null);
+      } catch (err) {
+        console.log('Aviso: sem foto do tatuador do servidor:', err.message);
+      }
+    }
+
     carregarDestaques();
+    carregarFoto();
   }, []);
 
   async function abrirRede(id) {
@@ -45,5 +56,5 @@ export function useTatuador() {
     }
   }
 
-  return { tatuador: TATUADOR_MOCK, destaques, abrirRede, carregando: false };
+  return { tatuador: { ...TATUADOR_MOCK, imagemUrl }, destaques, abrirRede, carregando: false };
 }
