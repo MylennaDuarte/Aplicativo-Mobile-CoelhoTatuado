@@ -32,11 +32,14 @@ function descriptografar(textoCriptografado) {
   }
 }
 
+function somenteDigitos(valor) {
+  return String(valor || '').replace(/\D/g, '');
+}
+
 const app = express();
 app.use(express.json());
 app.use(cors());
 
-// Libera a pasta 'uploads' para o aplicativo carregar as fotos
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 const TRABALHOS = [
@@ -48,11 +51,61 @@ const TRABALHOS = [
   { titulo: 'Coroa', estilo: 'Dark art', regiao: 'Coxa', tamanho: '16 cm', sessao: '4h', altura: 280, descricao: 'Detalhe de coroa com cravos em blackwork.', arquivo: 'rosto.jpg' },
 ];
 
-// Monta a URL completa usando o IP atual do notebook (funciona em casa e na faculdade)
+const NOVIDADES_INICIAIS = [
+  {
+    tag: 'Agenda',
+    destaque: 1,
+    dataPublicacao: '2026-11-22',
+    titulo: 'Agenda de dezembro aberta',
+    descricao: 'Últimos horários do ano. Sessões de sábado estão quase esgotadas.',
+    imagemUrl: 'batman.jpg',
+    botaoTexto: 'Reservar horário',
+    telaDestino: 'Agendar',
+  },
+  {
+    tag: 'Novidade',
+    destaque: 0,
+    dataPublicacao: '2026-10-12',
+    titulo: 'Kit pós-tattoo em toda sessão',
+    descricao: '50g de creme, card com os cuidados, adesivos do Coelho e docinhos. Para a cicatrização e para a alegria.',
+    imagemUrl: 'morte.jpg',
+    botaoTexto: 'Ver cuidados',
+    telaDestino: 'Estudio',
+  },
+  {
+    tag: 'Promoção',
+    destaque: 1,
+    dataPublicacao: '2026-11-28',
+    titulo: 'Flash day: Coelhos',
+    descricao: 'Dez desenhos autorais do mascote, tamanho até 8 cm, valor fechado. Um por pessoa, ordem de chegada.',
+    imagemUrl: 'rosto.jpg',
+    botaoTexto: 'Quero um flash',
+    telaDestino: 'Orcamento',
+  },
+  {
+    tag: 'Projeto',
+    destaque: 0,
+    dataPublicacao: '2026-09-15',
+    titulo: 'Série Santos & Caveiras',
+    descricao: 'Projeto autoral em andamento. Procuro quatro pessoas para peças grandes em costas e costela, com condições especiais.',
+    imagemUrl: null,
+    botaoTexto: 'Participar',
+    telaDestino: 'Orcamento',
+  },
+];
+
 function montarUrlImagem(req, nomeArquivo) {
   if (!nomeArquivo) return null;
   if (nomeArquivo.startsWith('http')) return nomeArquivo;
   return `${req.protocol}://${req.get('host')}/uploads/${nomeArquivo}`;
+}
+
+async function adicionarColunaSeNaoExistir(db, tabela, coluna, tipo) {
+  const colunas = await db.all(`PRAGMA table_info(${tabela})`);
+  const existe = colunas.some((c) => c.name === coluna);
+  if (!existe) {
+    await db.exec(`ALTER TABLE ${tabela} ADD COLUMN ${coluna} ${tipo}`);
+  }
 }
 
 async function iniciar() {
@@ -65,10 +118,11 @@ async function iniciar() {
     );
     CREATE TABLE IF NOT EXISTS orcamentos (
       id INTEGER PRIMARY KEY AUTOINCREMENT, codigo TEXT, estilo TEXT, localCorpo TEXT,
-      tamanhoCm TEXT, ideia TEXT, nome TEXT, whatsapp TEXT
+      tamanhoCm TEXT, ideia TEXT, preferenciaData TEXT, nome TEXT, whatsapp TEXT, observacoes TEXT
     );
     CREATE TABLE IF NOT EXISTS novidades (
-      id INTEGER PRIMARY KEY AUTOINCREMENT, tag TEXT, titulo TEXT, descricao TEXT, dataPublicacao TEXT
+      id INTEGER PRIMARY KEY AUTOINCREMENT, tag TEXT, destaque INTEGER DEFAULT 0, titulo TEXT,
+      descricao TEXT, dataPublicacao TEXT, imagemUrl TEXT, botaoTexto TEXT, telaDestino TEXT
     );
     CREATE TABLE IF NOT EXISTS trabalhos (
       id INTEGER PRIMARY KEY AUTOINCREMENT, titulo TEXT, estilo TEXT, regiao TEXT,
@@ -76,8 +130,15 @@ async function iniciar() {
     );
   `);
 
-  const count = await db.get('SELECT COUNT(*) as total FROM trabalhos');
-  if (count.total === 0) {
+  await adicionarColunaSeNaoExistir(db, 'orcamentos', 'preferenciaData', 'TEXT');
+  await adicionarColunaSeNaoExistir(db, 'orcamentos', 'observacoes', 'TEXT');
+  await adicionarColunaSeNaoExistir(db, 'novidades', 'destaque', 'INTEGER DEFAULT 0');
+  await adicionarColunaSeNaoExistir(db, 'novidades', 'imagemUrl', 'TEXT');
+  await adicionarColunaSeNaoExistir(db, 'novidades', 'botaoTexto', 'TEXT');
+  await adicionarColunaSeNaoExistir(db, 'novidades', 'telaDestino', 'TEXT');
+
+  const countTrabalhos = await db.get('SELECT COUNT(*) as total FROM trabalhos');
+  if (countTrabalhos.total === 0) {
     for (const t of TRABALHOS) {
       await db.run(
         'INSERT INTO trabalhos (titulo, estilo, regiao, tamanho, sessao, altura, descricao, imagemUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
@@ -90,10 +151,24 @@ async function iniciar() {
     }
   }
 
+  const countNovidades = await db.get('SELECT COUNT(*) as total FROM novidades');
+  if (countNovidades.total === 0) {
+    for (const n of NOVIDADES_INICIAIS) {
+      await db.run(
+        'INSERT INTO novidades (tag, destaque, titulo, descricao, dataPublicacao, imagemUrl, botaoTexto, telaDestino) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [n.tag, n.destaque, n.titulo, n.descricao, n.dataPublicacao, n.imagemUrl, n.botaoTexto, n.telaDestino]
+      );
+    }
+  }
+
   app.get('/', (req, res) => res.json({ status: 'OK' }));
 
   app.get('/inicio', async (req, res) => {
     const recentes = await db.all('SELECT id, titulo, estilo, imagemUrl FROM trabalhos LIMIT 3');
+    const novidadeDestaque = await db.get(
+      'SELECT * FROM novidades WHERE destaque = 1 ORDER BY id DESC LIMIT 1'
+    );
+
     res.json({
       hero: { eyebrow: 'Blackwork · Dark art', titulo: 'Tinta preta,\ntraço sem medo.', descricao: 'Bem-vindo ao estúdio do Victor. Atendimento individual e projetos autorais.' },
       trabalhosRecentes: recentes.map((r) => ({
@@ -101,7 +176,18 @@ async function iniciar() {
         id: String(r.id),
         imagemUrl: montarUrlImagem(req, r.imagemUrl),
       })),
-      novidade: { tag: 'Novidade', titulo: 'Kit pós-tattoo em toda sessão', descricao: 'Creme, card de cuidados, adesivos e docinhos.' },
+      novidade: novidadeDestaque
+        ? {
+            tag: novidadeDestaque.tag,
+            titulo: novidadeDestaque.titulo,
+            descricao: novidadeDestaque.descricao,
+            imagemUrl: montarUrlImagem(req, novidadeDestaque.imagemUrl),
+            acao: {
+              rotulo: novidadeDestaque.botaoTexto || 'Ver mais',
+              rota: novidadeDestaque.telaDestino || 'Novidades',
+            },
+          }
+        : { tag: 'Novidade', titulo: 'Kit pós-tattoo em toda sessão', descricao: 'Creme, card de cuidados, adesivos e docinhos.' },
       diferenciais: [
         { numero: '01', titulo: 'Atendimento individual', descricao: 'Um cliente por vez, sem fila e sem pressa.' },
         { numero: '02', titulo: 'Projetos autorais', descricao: 'Desenho exclusivo, feito para o seu corpo.' },
@@ -125,69 +211,97 @@ async function iniciar() {
   });
 
   app.get('/agendamentos', async (req, res) => {
+    const whatsappFiltro = somenteDigitos(req.query.whatsapp);
+    if (!whatsappFiltro) {
+      return res.json([]);
+    }
+
     const lista = await db.all('SELECT * FROM agendamentos ORDER BY id DESC');
-    const listaPronta = lista.map((item) => ({
-      ...item,
-      nome: descriptografar(item.nome),
-      whatsapp: descriptografar(item.whatsapp),
-      instagram: descriptografar(item.instagram),
-    }));
-    res.json(listaPronta);
+    const listaFiltrada = lista
+      .map((item) => ({
+        ...item,
+        nome: descriptografar(item.nome),
+        whatsapp: descriptografar(item.whatsapp),
+        instagram: descriptografar(item.instagram),
+      }))
+      .filter((item) => somenteDigitos(item.whatsapp) === whatsappFiltro);
+
+    res.json(listaFiltrada);
   });
 
   app.post('/agendamentos', async (req, res) => {
     const { servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes } = req.body;
     const r = await db.run(
-      'INSERT INTO agendamentos (servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [
-        servicoId,
-        servicoTitulo,
-        data,
-        horario,
-        criptografar(nome),
-        criptografar(whatsapp),
-        criptografar(instagram),
-        observacoes,
-      ]
-    );
-    const codigo = 'CT-' + String(r.lastID).padStart(4, '0');
-    await db.run('UPDATE agendamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
-    res.status(201).json({ id: r.lastID, codigo });
-  });
-
-  app.get('/orcamentos', async (req, res) => {
-    const lista = await db.all('SELECT * FROM orcamentos ORDER BY id DESC');
-    const listaPronta = lista.map((item) => ({
-      ...item,
-      nome: descriptografar(item.nome),
-      whatsapp: descriptografar(item.whatsapp),
-    }));
-    res.json(listaPronta);
-  });
-
-  app.post('/orcamentos', async (req, res) => {
-    const { estilo, localCorpo, tamanhoCm, ideia, nome, whatsapp } = req.body;
-    const r = await db.run(
-      'INSERT INTO orcamentos (estilo, localCorpo, tamanhoCm, ideia, nome, whatsapp) VALUES (?, ?, ?, ?, ?, ?)',
-      [
-        estilo,
-        localCorpo,
-        tamanhoCm,
-        ideia,
-        criptografar(nome),
-        criptografar(whatsapp),
-      ]
-    );
-    const codigo = 'ORC-' + String(r.lastID).padStart(4, '0');
-    await db.run('UPDATE orcamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
-    res.status(201).json({ id: r.lastID, codigo });
-  });
-
-  app.get('/novidades', async (req, res) => {
-    res.json(await db.all('SELECT * FROM novidades ORDER BY id DESC'));
-  });
-
-  app.listen(3000, '0.0.0.0', () => console.log('Servidor rodando na porta 3000!'));
+'INSERT INTO agendamentos (servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+[
+servicoId,
+servicoTitulo,
+data,
+horario,
+criptografar(nome),
+criptografar(whatsapp),
+criptografar(instagram),
+observacoes,
+]
+);
+const codigo = 'CT-' + String(r.lastID).padStart(4, '0');
+await db.run('UPDATE agendamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
+res.status(201).json({ id: r.lastID, codigo });
+});
+app.get('/orcamentos', async (req, res) => {
+const whatsappFiltro = somenteDigitos(req.query.whatsapp);
+if (!whatsappFiltro) {
+return res.json([]);
 }
-
+const lista = await db.all('SELECT * FROM orcamentos ORDER BY id DESC');
+const listaFiltrada = lista
+.map((item) => ({
+...item,
+nome: descriptografar(item.nome),
+whatsapp: descriptografar(item.whatsapp),
+}))
+.filter((item) => somenteDigitos(item.whatsapp) === whatsappFiltro);
+res.json(listaFiltrada);
+});
+app.post('/orcamentos', async (req, res) => {
+const { estilo, localCorpo, tamanhoCm, ideia, preferenciaData, nome, whatsapp, observacoes } = req.body;
+const r = await db.run(
+'INSERT INTO orcamentos (estilo, localCorpo, tamanhoCm, ideia, preferenciaData, nome, whatsapp, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+[
+estilo,
+localCorpo,
+tamanhoCm,
+ideia,
+preferenciaData || '',
+criptografar(nome),
+criptografar(whatsapp),
+observacoes || '',
+]
+);
+const codigo = 'ORC-' + String(r.lastID).padStart(4, '0');
+await db.run('UPDATE orcamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
+res.status(201).json({ id: r.lastID, codigo });
+});
+app.get('/novidades', async (req, res) => {
+const lista = await db.all('SELECT * FROM novidades ORDER BY destaque DESC, id DESC');
+res.json(
+lista.map((item) => ({
+id: String(item.id),
+tag: item.tag,
+destaque: Boolean(item.destaque),
+titulo: item.titulo,
+descricao: item.descricao,
+dataPublicacao: item.dataPublicacao,
+imagemUrl: montarUrlImagem(req, item.imagemUrl),
+botaoTexto: item.botaoTexto,
+telaDestino: item.telaDestino,
+acao: {
+rotulo: item.botaoTexto || 'Ver mais',
+rota: item.telaDestino || 'Inicio',
+},
+}))
+);
+});
+app.listen(3000, '0.0.0.0', () => console.log('Servidor rodando na porta 3000!'));
+}
 iniciar();
