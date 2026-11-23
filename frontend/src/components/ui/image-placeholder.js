@@ -1,24 +1,26 @@
-import { Image, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
+import { StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../../hooks/use-theme';
+import { urlDaImagem } from '../../utils/imagem';
 import { AppText } from './text';
 
-export function ImagePlaceholder({ label = 'Imagem', uri, style }) {
+// Mostra a foto quando `uri` existe (caminho relativo do back ou URL completa);
+// sem foto, fica o quadrado cinza com o rótulo.
+export function ImagePlaceholder({ uri, label = 'Imagem', style }) {
   const { colors } = useTheme();
-
-  if (uri) {
-    return (
-      <Image
-        source={{ uri }}
-        style={[styles.base, style]}
-        resizeMode="cover"
-      />
-    );
-  }
+  const url = urlDaImagem(uri);
 
   return (
     <View style={[styles.base, { backgroundColor: colors.surfaceElevated }, style]}>
-      {label ? (
+      {url ? (
+        <Image
+          source={{ uri: url }}
+          contentFit="cover"
+          transition={200}
+          style={StyleSheet.absoluteFill}
+        />
+      ) : label ? (
         <AppText variant="label" color="textFaint">
           {label}
         </AppText>

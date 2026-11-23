@@ -20,6 +20,7 @@ export function TatuadorScreen({ navigation }) {
       <Screen padded={false} safeTop={false}>
         <Capa
           altura={ALTURA_CAPA}
+          imagem={tatuador.imagemUrl}
           eyebrow={tatuador.papel}
           titulo={tatuador.nome}
           tamanhoTitulo={72}>

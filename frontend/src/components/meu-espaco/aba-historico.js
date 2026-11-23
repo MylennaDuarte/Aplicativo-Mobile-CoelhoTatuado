@@ -12,11 +12,17 @@ export function AbaHistorico({ historico, cuidados, onAbrirCuidados }) {
 
   return (
     <View>
-      <View>
-        {historico.map((item) => (
-          <HistoricoItem key={item.id} item={item} />
-        ))}
-      </View>
+      {historico.length === 0 ? (
+        <AppText color="textMuted" style={styles.vazio}>
+          Nenhuma sessão realizada ainda.
+        </AppText>
+      ) : (
+        <View>
+          {historico.map((item) => (
+            <HistoricoItem key={item.id} item={item} />
+          ))}
+        </View>
+      )}
       <View style={[styles.cuidados, { borderColor: colors.border }]}>
         <View style={styles.cuidadosTextos}>
           <AppText variant="label" color="textDim">
@@ -33,6 +39,10 @@ export function AbaHistorico({ historico, cuidados, onAbrirCuidados }) {
 }
 
 const styles = StyleSheet.create({
+  vazio: {
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
   cuidados: {
     marginTop: 18,
     padding: Spacing.md,

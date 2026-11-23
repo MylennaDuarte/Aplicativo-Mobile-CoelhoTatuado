@@ -1,5 +1,4 @@
 import { StyleSheet, View } from 'react-native';
-
 import { Confirmacao } from '../components/agendar/confirmacao';
 import { DadosCliente } from '../components/agendar/dados-cliente';
 import { DataHorario } from '../components/agendar/data-horario';
@@ -10,11 +9,9 @@ import { Screen } from '../components/layout/screen';
 import { useAgendamento } from '../hooks/use-agendamento';
 import { navegarPara } from '../navigation/navegar';
 
-// Tela de agendamento: quatro etapas (tipo → data e horário → dados → revisão) e a confirmação.
 export function AgendarScreen({ navigation }) {
   const agendamento = useAgendamento();
 
-  // Navegação centralizada (src/navigation/navegar.js): tabs e telas do stack.
   function irPara(rota) {
     navegarPara(navigation, rota);
   }
@@ -79,6 +76,7 @@ export function AgendarScreen({ navigation }) {
             conteudo={agendamento.enviado}
             codigo={agendamento.codigo}
             linhas={agendamento.resumo}
+            onWhatsApp={agendamento.enviarPorWhatsApp}
             onAcompanhar={() => irPara('MeuEspaco')}
             onVoltarInicio={voltarAoInicio}
           />
@@ -88,7 +86,7 @@ export function AgendarScreen({ navigation }) {
 
   return (
     <View style={styles.flex}>
-      {/* key no passo: remonta a rolagem e volta ao topo a cada etapa, como no protótipo. */}
+      {}
       <Screen key={agendamento.passo} withBottomNav>
         {agendamento.concluido ? null : (
           <PassosHeader

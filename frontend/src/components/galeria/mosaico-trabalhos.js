@@ -44,8 +44,8 @@ export function MosaicoTrabalhos({ trabalhos, onAbrir }) {
                 pressed && styles.pressed,
               ]}>
               <ImagePlaceholder
-                label={trabalho.titulo}
                 uri={trabalho.imagemUrl}
+                label={trabalho.titulo}
                 style={StyleSheet.absoluteFill}
               />
               <LinearGradient colors={['transparent', 'rgba(10,10,10,0.9)']} style={styles.legenda}>

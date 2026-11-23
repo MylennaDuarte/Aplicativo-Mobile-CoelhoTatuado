@@ -8,11 +8,11 @@ import { AppText } from '../ui/text';
 
 export function Capa({
   altura,
+  imagem,
   eyebrow,
   titulo,
   tamanhoTitulo = 56,
   degrade = true,
-  uri,
   children,
   style,
 }) {
@@ -21,7 +21,7 @@ export function Capa({
 
   return (
     <View style={[styles.base, { height: altura }, style]}>
-      <ImagePlaceholder label="" uri={uri} style={StyleSheet.absoluteFill} />
+      <ImagePlaceholder uri={imagem} label="" style={StyleSheet.absoluteFill} />
       {degrade ? (
         <LinearGradient
           colors={['rgba(10,10,10,0.4)', 'rgba(10,10,10,0)', colors.background]}

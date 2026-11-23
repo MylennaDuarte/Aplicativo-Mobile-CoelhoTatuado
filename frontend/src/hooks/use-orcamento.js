@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import * as ImagePicker from 'expo-image-picker';
+import { useEffect, useState } from 'react';
 import { Alert } from 'react-native';
 
 import { ORCAMENTO_MOCK } from '../data/orcamento.mock';
 import { api } from '../services/api/client';
+import { lerIdentidade, salvarIdentidade } from '../services/identidade';
 
 const DADOS_INICIAIS = {
   estilo: null,
@@ -11,11 +13,12 @@ const DADOS_INICIAIS = {
   altura: '',
   ideia: '',
   preferenciaData: '',
+  nome: '',
   whatsapp: '',
   observacoes: '',
 };
 
-// Preenche o formulário com o que veio por parâmetro de rota
+
 function dadosIniciais(prefill) {
   const dados = { ...DADOS_INICIAIS };
   if (!prefill) return dados;
@@ -27,19 +30,32 @@ function dadosIniciais(prefill) {
   return dados;
 }
 
+
 function referenciasVazias() {
-  return Array(ORCAMENTO_MOCK.totalReferencias).fill(false);
+  return Array(ORCAMENTO_MOCK.totalReferencias).fill(null);
 }
 
 export function useOrcamento(prefill) {
   const [dados, setDados] = useState(() => dadosIniciais(prefill));
   const [referencias, setReferencias] = useState(referenciasVazias);
   const [enviando, setEnviando] = useState(false);
-  // Depois do envio: { codigo } devolvido pelo servidor.
+
   const [enviado, setEnviado] = useState(null);
 
+  // Nome e WhatsApp salvos no celular (último agendamento/orçamento) já vêm preenchidos.
+  useEffect(() => {
+    lerIdentidade().then((salva) => {
+      if (!salva) return;
+      setDados((atual) => ({
+        ...atual,
+        nome: atual.nome || salva.nome || '',
+        whatsapp: atual.whatsapp || salva.whatsapp || '',
+      }));
+    });
+  }, []);
+
   const valido = Boolean(
-    dados.estilo && dados.regiao && dados.ideia.trim() && dados.whatsapp.trim()
+    dados.estilo && dados.regiao && dados.ideia.trim() && dados.nome.trim() && dados.whatsapp.trim()
   );
   const tamanho = dados.largura && dados.altura ? `${dados.largura}×${dados.altura} cm` : '';
 
@@ -47,20 +63,37 @@ export function useOrcamento(prefill) {
     setDados((atual) => ({ ...atual, [campo]: valor }));
   }
 
-  // Marca/desmarca um espaço de referência. O envio das fotos virá com o backend de uploads.
-  function alternarReferencia(indice) {
-    setReferencias((atual) => atual.map((marcada, i) => (i === indice ? !marcada : marcada)));
+  
+  async function escolherReferencia(indice) {
+    const permissao = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permissao.granted) {
+      Alert.alert('Sem acesso às fotos', 'Libere o acesso à galeria nas configurações.');
+      return;
+    }
+
+    const resultado = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 0.8,
+    });
+    if (resultado.canceled) return;
+
+    const { uri } = resultado.assets[0];
+    setReferencias((atual) => atual.map((foto, i) => (i === indice ? { uri } : foto)));
+  }
+
+  function removerReferencia(indice) {
+    setReferencias((atual) => atual.map((foto, i) => (i === indice ? null : foto)));
   }
 
   async function enviar() {
     if (!valido || enviando) return;
 
-    // Campos com os nomes das colunas do backend.
     const payload = {
       estilo: dados.estilo,
       localCorpo: dados.regiao,
       tamanhoCm: tamanho,
       ideia: dados.ideia.trim(),
+      nome: dados.nome.trim(),
       whatsapp: dados.whatsapp.trim(),
       preferenciaData: dados.preferenciaData.trim(),
       observacoes: dados.observacoes.trim(),
@@ -69,6 +102,7 @@ export function useOrcamento(prefill) {
     try {
       setEnviando(true);
       const resposta = await api.post('/orcamentos', payload);
+      salvarIdentidade({ nome: payload.nome, whatsapp: payload.whatsapp });
       setEnviado({ codigo: resposta?.codigo ?? '' });
     } catch (err) {
       Alert.alert(
@@ -81,7 +115,7 @@ export function useOrcamento(prefill) {
   }
 
   function reiniciar() {
-    setDados(DADOS_INICIAIS);
+    setDados({ ...DADOS_INICIAIS, nome: dados.nome, whatsapp: dados.whatsapp });
     setReferencias(referenciasVazias());
     setEnviado(null);
   }
@@ -94,7 +128,8 @@ export function useOrcamento(prefill) {
     dados,
     atualizar,
     referencias,
-    alternarReferencia,
+    escolherReferencia,
+    removerReferencia,
     valido,
     enviando,
     enviado,

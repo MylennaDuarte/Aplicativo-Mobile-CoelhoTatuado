@@ -27,8 +27,8 @@ export function DestaquesTatuador({ trabalhos, onAbrir, onVerGaleria }) {
               pressed && styles.pressed,
             ]}>
             <ImagePlaceholder
-              label={trabalho.titulo}
               uri={trabalho.imagemUrl}
+              label={trabalho.titulo}
               style={StyleSheet.absoluteFill}
             />
           </Pressable>
