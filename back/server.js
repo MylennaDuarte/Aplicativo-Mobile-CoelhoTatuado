@@ -1,6 +1,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const sqlite3 = require('sqlite3');
 const { open } = require('sqlite');
 const crypto = require('crypto');
@@ -35,14 +36,24 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Libera a pasta 'uploads' para o aplicativo carregar as fotos
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 const TRABALHOS = [
-  { titulo: 'Batman que Ri', estilo: 'Dark art', regiao: 'Coxa', tamanho: '18 cm', sessao: '6h', altura: 240, descricao: 'Releitura em blackwork com whip shading.' },
-  { titulo: 'Morte e a Donzela', estilo: 'Blackwork', regiao: 'Panturrilha', tamanho: '22 cm', sessao: '2 sessões', altura: 300, descricao: 'Composição clássica em pontilhismo e sombras.' },
-  { titulo: 'Rosto fragmentado', estilo: 'Retrato', regiao: 'Antebraço', tamanho: '12 cm', sessao: '3h', altura: 220, descricao: 'Retrato em dark art com dispersão em pontos.' },
-  { titulo: 'Olhar vazio', estilo: 'Retrato', regiao: 'Braço', tamanho: '10 cm', sessao: '2h30', altura: 260, descricao: 'Variação de retrato em preto chapado.' },
-  { titulo: 'Véu', estilo: 'Pontilhismo', regiao: 'Panturrilha', tamanho: '20 cm', sessao: '5h', altura: 230, descricao: 'Estudo de tecido em pontilhismo fino.' },
-  { titulo: 'Coroa', estilo: 'Dark art', regiao: 'Coxa', tamanho: '16 cm', sessao: '4h', altura: 280, descricao: 'Detalhe de coroa com cravos em blackwork.' },
+  { titulo: 'Batman que Ri', estilo: 'Dark art', regiao: 'Coxa', tamanho: '18 cm', sessao: '6h', altura: 240, descricao: 'Releitura em blackwork com whip shading.', arquivo: 'batman.jpg' },
+  { titulo: 'Morte e a Donzela', estilo: 'Blackwork', regiao: 'Panturrilha', tamanho: '22 cm', sessao: '2 sessões', altura: 300, descricao: 'Composição clássica em pontilhismo e sombras.', arquivo: 'morte.jpg' },
+  { titulo: 'Rosto fragmentado', estilo: 'Retrato', regiao: 'Antebraço', tamanho: '12 cm', sessao: '3h', altura: 220, descricao: 'Retrato em dark art com dispersão em pontos.', arquivo: 'rosto.jpg' },
+  { titulo: 'Olhar vazio', estilo: 'Retrato', regiao: 'Braço', tamanho: '10 cm', sessao: '2h30', altura: 260, descricao: 'Variação de retrato em preto chapado.', arquivo: 'batman.jpg' },
+  { titulo: 'Véu', estilo: 'Pontilhismo', regiao: 'Panturrilha', tamanho: '20 cm', sessao: '5h', altura: 230, descricao: 'Estudo de tecido em pontilhismo fino.', arquivo: 'morte.jpg' },
+  { titulo: 'Coroa', estilo: 'Dark art', regiao: 'Coxa', tamanho: '16 cm', sessao: '4h', altura: 280, descricao: 'Detalhe de coroa com cravos em blackwork.', arquivo: 'rosto.jpg' },
 ];
+
+// Monta a URL completa usando o IP atual do notebook (funciona em casa e na faculdade)
+function montarUrlImagem(req, nomeArquivo) {
+  if (!nomeArquivo) return null;
+  if (nomeArquivo.startsWith('http')) return nomeArquivo;
+  return `${req.protocol}://${req.get('host')}/uploads/${nomeArquivo}`;
+}
 
 async function iniciar() {
   const db = await open({ filename: './banco.db', driver: sqlite3.Database });
@@ -69,9 +80,13 @@ async function iniciar() {
   if (count.total === 0) {
     for (const t of TRABALHOS) {
       await db.run(
-        'INSERT INTO trabalhos (titulo, estilo, regiao, tamanho, sessao, altura, descricao) VALUES (?, ?, ?, ?, ?, ?, ?)',
-        [t.titulo, t.estilo, t.regiao, t.tamanho, t.sessao, t.altura, t.descricao]
+        'INSERT INTO trabalhos (titulo, estilo, regiao, tamanho, sessao, altura, descricao, imagemUrl) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+        [t.titulo, t.estilo, t.regiao, t.tamanho, t.sessao, t.altura, t.descricao, t.arquivo]
       );
+    }
+  } else {
+    for (let i = 0; i < TRABALHOS.length; i++) {
+      await db.run('UPDATE trabalhos SET imagemUrl = ? WHERE id = ?', [TRABALHOS[i].arquivo, i + 1]);
     }
   }
 
@@ -81,7 +96,11 @@ async function iniciar() {
     const recentes = await db.all('SELECT id, titulo, estilo, imagemUrl FROM trabalhos LIMIT 3');
     res.json({
       hero: { eyebrow: 'Blackwork · Dark art', titulo: 'Tinta preta,\ntraço sem medo.', descricao: 'Bem-vindo ao estúdio do Victor. Atendimento individual e projetos autorais.' },
-      trabalhosRecentes: recentes.map((r) => ({ ...r, id: String(r.id) })),
+      trabalhosRecentes: recentes.map((r) => ({
+        ...r,
+        id: String(r.id),
+        imagemUrl: montarUrlImagem(req, r.imagemUrl),
+      })),
       novidade: { tag: 'Novidade', titulo: 'Kit pós-tattoo em toda sessão', descricao: 'Creme, card de cuidados, adesivos e docinhos.' },
       diferenciais: [
         { numero: '01', titulo: 'Atendimento individual', descricao: 'Um cliente por vez, sem fila e sem pressa.' },
@@ -96,7 +115,13 @@ async function iniciar() {
 
   app.get('/trabalhos', async (req, res) => {
     const lista = await db.all('SELECT * FROM trabalhos');
-    res.json(lista.map((item) => ({ ...item, id: String(item.id) })));
+    res.json(
+      lista.map((item) => ({
+        ...item,
+        id: String(item.id),
+        imagemUrl: montarUrlImagem(req, item.imagemUrl),
+      }))
+    );
   });
 
   app.get('/agendamentos', async (req, res) => {

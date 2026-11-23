@@ -1,12 +1,20 @@
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 
 import { useTheme } from '../../hooks/use-theme';
 import { AppText } from './text';
 
-// Ocupa o lugar de uma imagem que virá do backend.
-// Quando a API existir, troque por <Image source={{ uri }} /> no mesmo lugar.
-export function ImagePlaceholder({ label = 'Imagem', style }) {
+export function ImagePlaceholder({ label = 'Imagem', uri, style }) {
   const { colors } = useTheme();
+
+  if (uri) {
+    return (
+      <Image
+        source={{ uri }}
+        style={[styles.base, style]}
+        resizeMode="cover"
+      />
+    );
+  }
 
   return (
     <View style={[styles.base, { backgroundColor: colors.surfaceElevated }, style]}>

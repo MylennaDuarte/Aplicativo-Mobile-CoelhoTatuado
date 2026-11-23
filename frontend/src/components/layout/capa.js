@@ -12,6 +12,7 @@ export function Capa({
   titulo,
   tamanhoTitulo = 56,
   degrade = true,
+  uri,
   children,
   style,
 }) {
@@ -20,7 +21,7 @@ export function Capa({
 
   return (
     <View style={[styles.base, { height: altura }, style]}>
-      <ImagePlaceholder label="" style={StyleSheet.absoluteFill} />
+      <ImagePlaceholder label="" uri={uri} style={StyleSheet.absoluteFill} />
       {degrade ? (
         <LinearGradient
           colors={['rgba(10,10,10,0.4)', 'rgba(10,10,10,0)', colors.background]}
