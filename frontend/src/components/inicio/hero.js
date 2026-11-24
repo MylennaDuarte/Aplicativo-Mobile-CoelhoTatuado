@@ -1,9 +1,11 @@
+import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Radius, Spacing } from '../../constants/theme';
 import { useTheme } from '../../hooks/use-theme';
+import { urlDaImagem } from '../../utils/imagem';
 import { Button } from '../ui/button';
 import { ImagePlaceholder } from '../ui/image-placeholder';
 import { AppText } from '../ui/text';
@@ -12,11 +14,11 @@ import { AppText } from '../ui/text';
 export function Hero({ conteudo, onAgendar, onOrcamento, onEstudio }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const logoUri = urlDaImagem(conteudo.logoUrl);
 
   return (
     <View style={styles.container}>
-      {/* Foto de capa virá do backend; até lá, placeholder. */}
-      <ImagePlaceholder label="" style={StyleSheet.absoluteFill} />
+      <ImagePlaceholder label="" uri={conteudo.imagemUrl} style={StyleSheet.absoluteFill} />
       <LinearGradient
         colors={['rgba(10,10,10,0.55)', 'rgba(10,10,10,0)', 'rgba(10,10,10,0.2)', colors.background]}
         locations={[0, 0.3, 0.55, 1]}
@@ -25,11 +27,14 @@ export function Hero({ conteudo, onAgendar, onOrcamento, onEstudio }) {
 
       <View style={[styles.topo, { top: insets.top + 14 }]}>
         <View style={styles.marca}>
-          {/* Substituir pelo logo vetorial do Coelho. */}
-          <View style={[styles.logo, { borderColor: colors.lineOnImage }]}>
-            <AppText variant="brand" style={styles.logoTexto}>
-              CT
-            </AppText>
+          <View style={[styles.logo, { borderColor: colors.lineOnImage, overflow: 'hidden' }]}>
+            {logoUri ? (
+              <Image source={{ uri: logoUri }} contentFit="cover" style={StyleSheet.absoluteFill} />
+            ) : (
+              <AppText variant="brand" style={styles.logoTexto}>
+                CT
+              </AppText>
+            )}
           </View>
           <AppText variant="brand">{'Coelho\nTatuado'}</AppText>
         </View>
