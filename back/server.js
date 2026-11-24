@@ -46,9 +46,9 @@ const TRABALHOS = [
   { titulo: 'Batman que Ri', estilo: 'Dark art', regiao: 'Coxa', tamanho: '18 cm', sessao: '6h', altura: 240, descricao: 'Releitura em blackwork com whip shading.', arquivo: 'batman.jpg' },
   { titulo: 'Morte e a Donzela', estilo: 'Blackwork', regiao: 'Panturrilha', tamanho: '22 cm', sessao: '2 sessões', altura: 300, descricao: 'Composição clássica em pontilhismo e sombras.', arquivo: 'morte.jpg' },
   { titulo: 'Rosto fragmentado', estilo: 'Retrato', regiao: 'Antebraço', tamanho: '12 cm', sessao: '3h', altura: 220, descricao: 'Retrato em dark art com dispersão em pontos.', arquivo: 'rosto.jpg' },
-  { titulo: 'Olhar vazio', estilo: 'Retrato', regiao: 'Braço', tamanho: '10 cm', sessao: '2h30', altura: 260, descricao: 'Variação de retrato em preto chapado.', arquivo: 'batman.jpg' },
-  { titulo: 'Véu', estilo: 'Pontilhismo', regiao: 'Panturrilha', tamanho: '20 cm', sessao: '5h', altura: 230, descricao: 'Estudo de tecido em pontilhismo fino.', arquivo: 'morte.jpg' },
-  { titulo: 'Coroa', estilo: 'Dark art', regiao: 'Coxa', tamanho: '16 cm', sessao: '4h', altura: 280, descricao: 'Detalhe de coroa com cravos em blackwork.', arquivo: 'rosto.jpg' },
+  { titulo: 'Olhar vazio', estilo: 'Retrato', regiao: 'Braço', tamanho: '10 cm', sessao: '2h30', altura: 260, descricao: 'Variação de retrato em preto chapado.', arquivo: 'aguia.JPG' },
+  { titulo: 'Véu', estilo: 'Pontilhismo', regiao: 'Panturrilha', tamanho: '20 cm', sessao: '5h', altura: 230, descricao: 'Estudo de tecido em pontilhismo fino.', arquivo: 'sol.JPG' },
+  { titulo: 'Coroa', estilo: 'Dark art', regiao: 'Coxa', tamanho: '16 cm', sessao: '4h', altura: 280, descricao: 'Detalhe de coroa com cravos em blackwork.', arquivo: 'flor.JPG' },
 ];
 
 const NOVIDADES_INICIAIS = [
@@ -58,7 +58,7 @@ const NOVIDADES_INICIAIS = [
     dataPublicacao: '2026-11-22',
     titulo: 'Agenda de dezembro aberta',
     descricao: 'Últimos horários do ano. Sessões de sábado estão quase esgotadas.',
-    imagemUrl: 'batman.jpg',
+    imagemUrl: 'agenda.JPG',
     botaoTexto: 'Reservar horário',
     telaDestino: 'Agendar',
   },
@@ -68,7 +68,7 @@ const NOVIDADES_INICIAIS = [
     dataPublicacao: '2026-10-12',
     titulo: 'Kit pós-tattoo em toda sessão',
     descricao: '50g de creme, card com os cuidados, adesivos do Coelho e docinhos. Para a cicatrização e para a alegria.',
-    imagemUrl: 'morte.jpg',
+    imagemUrl: 'kit.JPG',
     botaoTexto: 'Ver cuidados',
     telaDestino: 'Estudio',
   },
@@ -78,7 +78,7 @@ const NOVIDADES_INICIAIS = [
     dataPublicacao: '2026-11-28',
     titulo: 'Flash day: Coelhos',
     descricao: 'Dez desenhos autorais do mascote, tamanho até 8 cm, valor fechado. Um por pessoa, ordem de chegada.',
-    imagemUrl: 'rosto.jpg',
+    imagemUrl: 'flash.JPG',
     botaoTexto: 'Quero um flash',
     telaDestino: 'Orcamento',
   },
@@ -88,7 +88,7 @@ const NOVIDADES_INICIAIS = [
     dataPublicacao: '2026-09-15',
     titulo: 'Série Santos & Caveiras',
     descricao: 'Projeto autoral em andamento. Procuro quatro pessoas para peças grandes em costas e costela, com condições especiais.',
-    imagemUrl: null,
+    imagemUrl: 'santos.JPG',
     botaoTexto: 'Participar',
     telaDestino: 'Orcamento',
   },
@@ -159,6 +159,11 @@ async function iniciar() {
         [n.tag, n.destaque, n.titulo, n.descricao, n.dataPublicacao, n.imagemUrl, n.botaoTexto, n.telaDestino]
       );
     }
+  } else {
+    await db.run("UPDATE novidades SET imagemUrl = 'agenda.JPG' WHERE id = 1");
+    await db.run("UPDATE novidades SET imagemUrl = 'kit.JPG' WHERE id = 2");
+    await db.run("UPDATE novidades SET imagemUrl = 'flash.JPG' WHERE id = 3");
+    await db.run("UPDATE novidades SET imagemUrl = 'santos.JPG' WHERE id = 4");
   }
 
   app.get('/', (req, res) => res.json({ status: 'OK' }));
@@ -170,7 +175,13 @@ async function iniciar() {
     );
 
     res.json({
-      hero: { eyebrow: 'Blackwork · Dark art', titulo: 'Tinta preta,\ntraço sem medo.', descricao: 'Bem-vindo ao estúdio do Victor. Atendimento individual e projetos autorais.' },
+      hero: {
+        eyebrow: 'Blackwork · Dark art',
+        titulo: 'Tinta preta,\ntraço sem medo.',
+        descricao: 'Bem-vindo ao estúdio do Victor. Atendimento individual e projetos autorais.',
+        imagemUrl: montarUrlImagem(req, 'batman.jpg'),
+        logoUrl: montarUrlImagem(req, 'logo.JPG'),
+      },
       trabalhosRecentes: recentes.map((r) => ({
         ...r,
         id: String(r.id),
@@ -194,7 +205,11 @@ async function iniciar() {
         { numero: '03', titulo: 'Biossegurança', descricao: 'Material descartável e autoclave em todas as sessões.' },
         { numero: '04', titulo: 'Kit pós-tattoo', descricao: 'Creme, guia de cuidados e mimos a cada sessão.' },
       ],
-      tatuador: { nome: 'Victor', papel: 'Tatuador & fundador' },
+      tatuador: {
+        nome: 'Victor',
+        papel: 'Tatuador & fundador',
+        imagemUrl: montarUrlImagem(req, 'perfil.JPG'),
+      },
       rodape: 'Coelho Tatuado · desde 2019',
     });
   });
@@ -218,90 +233,88 @@ async function iniciar() {
 
     const lista = await db.all('SELECT * FROM agendamentos ORDER BY id DESC');
     const listaFiltrada = lista
-      .map((item) => ({
-        ...item,
-        nome: descriptografar(item.nome),
-        whatsapp: descriptografar(item.whatsapp),
-        instagram: descriptografar(item.instagram),
-      }))
-      .filter((item) => somenteDigitos(item.whatsapp) === whatsappFiltro);
-
+    .map((item) => ({
+    ...item,
+    nome: descriptografar(item.nome),
+    whatsapp: descriptografar(item.whatsapp),
+    instagram: descriptografar(item.instagram),
+    }))
+    .filter((item) => somenteDigitos(item.whatsapp) === whatsappFiltro);
     res.json(listaFiltrada);
-  });
-
-  app.post('/agendamentos', async (req, res) => {
+    });
+    app.post('/agendamentos', async (req, res) => {
     const { servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes } = req.body;
     const r = await db.run(
-'INSERT INTO agendamentos (servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-[
-servicoId,
-servicoTitulo,
-data,
-horario,
-criptografar(nome),
-criptografar(whatsapp),
-criptografar(instagram),
-observacoes,
-]
-);
-const codigo = 'CT-' + String(r.lastID).padStart(4, '0');
-await db.run('UPDATE agendamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
-res.status(201).json({ id: r.lastID, codigo });
-});
-app.get('/orcamentos', async (req, res) => {
-const whatsappFiltro = somenteDigitos(req.query.whatsapp);
-if (!whatsappFiltro) {
-return res.json([]);
-}
-const lista = await db.all('SELECT * FROM orcamentos ORDER BY id DESC');
-const listaFiltrada = lista
-.map((item) => ({
-...item,
-nome: descriptografar(item.nome),
-whatsapp: descriptografar(item.whatsapp),
-}))
-.filter((item) => somenteDigitos(item.whatsapp) === whatsappFiltro);
-res.json(listaFiltrada);
-});
-app.post('/orcamentos', async (req, res) => {
-const { estilo, localCorpo, tamanhoCm, ideia, preferenciaData, nome, whatsapp, observacoes } = req.body;
-const r = await db.run(
-'INSERT INTO orcamentos (estilo, localCorpo, tamanhoCm, ideia, preferenciaData, nome, whatsapp, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-[
-estilo,
-localCorpo,
-tamanhoCm,
-ideia,
-preferenciaData || '',
-criptografar(nome),
-criptografar(whatsapp),
-observacoes || '',
-]
-);
-const codigo = 'ORC-' + String(r.lastID).padStart(4, '0');
-await db.run('UPDATE orcamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
-res.status(201).json({ id: r.lastID, codigo });
-});
-app.get('/novidades', async (req, res) => {
-const lista = await db.all('SELECT * FROM novidades ORDER BY destaque DESC, id DESC');
-res.json(
-lista.map((item) => ({
-id: String(item.id),
-tag: item.tag,
-destaque: Boolean(item.destaque),
-titulo: item.titulo,
-descricao: item.descricao,
-dataPublicacao: item.dataPublicacao,
-imagemUrl: montarUrlImagem(req, item.imagemUrl),
-botaoTexto: item.botaoTexto,
-telaDestino: item.telaDestino,
-acao: {
-rotulo: item.botaoTexto || 'Ver mais',
-rota: item.telaDestino || 'Inicio',
-},
-}))
-);
-});
-app.listen(3000, '0.0.0.0', () => console.log('Servidor rodando na porta 3000!'));
-}
-iniciar();
+    'INSERT INTO agendamentos (servicoId, servicoTitulo, data, horario, nome, whatsapp, instagram, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+    servicoId,
+    servicoTitulo,
+    data,
+    horario,
+    criptografar(nome),
+    criptografar(whatsapp),
+    criptografar(instagram),
+    observacoes,
+    ]
+    );
+    const codigo = 'CT-' + String(r.lastID).padStart(4, '0');
+    await db.run('UPDATE agendamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
+    res.status(201).json({ id: r.lastID, codigo });
+    });
+    app.get('/orcamentos', async (req, res) => {
+    const whatsappFiltro = somenteDigitos(req.query.whatsapp);
+    if (!whatsappFiltro) {
+    return res.json([]);
+    }
+    const lista = await db.all('SELECT * FROM orcamentos ORDER BY id DESC');
+    const listaFiltrada = lista
+    .map((item) => ({
+    ...item,
+    nome: descriptografar(item.nome),
+    whatsapp: descriptografar(item.whatsapp),
+    }))
+    .filter((item) => somenteDigitos(item.whatsapp) === whatsappFiltro);
+    res.json(listaFiltrada);
+    });
+    app.post('/orcamentos', async (req, res) => {
+    const { estilo, localCorpo, tamanhoCm, ideia, preferenciaData, nome, whatsapp, observacoes } = req.body;
+    const r = await db.run(
+    'INSERT INTO orcamentos (estilo, localCorpo, tamanhoCm, ideia, preferenciaData, nome, whatsapp, observacoes) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [
+    estilo,
+    localCorpo,
+    tamanhoCm,
+    ideia,
+    preferenciaData || '',
+    criptografar(nome),
+    criptografar(whatsapp),
+    observacoes || '',
+    ]
+    );
+    const codigo = 'ORC-' + String(r.lastID).padStart(4, '0');
+    await db.run('UPDATE orcamentos SET codigo = ? WHERE id = ?', [codigo, r.lastID]);
+    res.status(201).json({ id: r.lastID, codigo });
+    });
+    app.get('/novidades', async (req, res) => {
+    const lista = await db.all('SELECT * FROM novidades ORDER BY destaque DESC, id DESC');
+    res.json(
+    lista.map((item) => ({
+    id: String(item.id),
+    tag: item.tag,
+    destaque: Boolean(item.destaque),
+    titulo: item.titulo,
+    descricao: item.descricao,
+    dataPublicacao: item.dataPublicacao,
+    imagemUrl: montarUrlImagem(req, item.imagemUrl),
+    botaoTexto: item.botaoTexto,
+    telaDestino: item.telaDestino,
+    acao: {
+    rotulo: item.botaoTexto || 'Ver mais',
+    rota: item.telaDestino || 'Inicio',
+    },
+    }))
+    );
+    });
+    app.listen(3000, '0.0.0.0', () => console.log('Servidor rodando na porta 3000!'));
+    }
+    iniciar();
